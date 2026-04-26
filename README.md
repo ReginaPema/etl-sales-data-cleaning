@@ -69,13 +69,11 @@ Applied 6 structured transformations · Se aplicaron 6 transformaciones:
 
 ## 📁 Repository Structure / Estructura
 
-\`\`\`
-etl-sales-data-cleaning/
-├── notebook/
-│   └── etl_sales_cleaning.ipynb
-├── README.md
-└── requirements.txt
-\`\`\`
+    etl-sales-data-cleaning/
+    ├── notebook/
+    │   └── etl_sales_cleaning.ipynb
+    ├── README.md
+    └── requirements.txt       # Python libraries
 
 ---
 
