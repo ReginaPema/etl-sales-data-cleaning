@@ -1,0 +1,48 @@
+﻿COLUMNA,TIPO_DATO,DESCRIPCION,EJEMPLO,NOTAS
+item_code,texto,Código identificador único del producto (SKU). Llave usada para unir FACT_SALES con DIM_PRODUCT.,7501058792808BP2,
+manufacturer,texto,Fabricante o compañía dueña de la marca.,Reckitt,
+brand,texto,Marca comercial del producto.,Vanish,
+item_description,texto,"Descripción completa del producto tal como aparece en el catálogo (nombre, variante, tamaño, código de barras).",Vanish Oxi Action Rosado y Pack 120 Gr...,Se corrigió un typo de captura ('9' espurio al inicio) en 11 registros durante el ETL.
+id_category,entero,"Identificador numérico de la categoría de producto, tal como llega de DIM_CATEGORY.",1,
+category,texto,Nombre de la categoría de producto (agrupación más amplia que segment).,Fabric Treatment And Sanit,
+segment,texto,Segmento de producto dentro de la categoría.,Powder,"Ej.: Bleach, Liquid & Gel, Powder, Pretreat, Bar, Sanitizer, Others."
+format,texto,Formato o presentación física del producto.,Polvo,"Ej.: Líquido, Polvo, Gel, Barra."
+attr1,texto,"Atributo de producto de nivel 1 (subcategoría funcional), depende de attr2.",Safe Bleach,Imputado en el ETL cuando su relación con attr2 era 100% consistente.
+attr2,texto,Atributo de producto de nivel 2.,Fabric Treatment,
+attr3,texto,"Atributo de producto de nivel 3 (más específico, ej. color o variante).",Rosa,Nulos originales rellenados como 'No Definido'.
+size,texto,"Tamaño del producto extraído de item_description, con unidad estandarizada (ml, l, g, kg).",120g,'Sin Especificar' cuando no se pudo extraer un patrón de tamaño reconocible.
+size_num,decimal,"Parte numérica de size, para cálculos y ordenamientos.",120,0 cuando size es 'Sin Especificar'.
+size_unit,texto,Unidad de medida de size.,g,'Sin Especificar' cuando no se pudo determinar.
+date,fecha,Fecha de inicio de la semana comercial de la venta.,28/08/2022,
+day_number,entero,Día de la semana de date en formato numérico (0=lunes ... 6=domingo).,6,
+day_name,texto,"Nombre del día de la semana de date, en inglés (salida nativa de pandas).",Sunday,
+week_number,entero,Número de semana comercial dentro del año.,34,
+week_year,texto,"Semana y año combinados, formato original del calendario comercial.",34-22,Llave usada para unir con DIM_CALENDAR.
+month,entero,Número de mes (1-12) de date.,8,
+month_name,texto,"Nombre del mes de date, en inglés.",August,
+quarter,entero,Trimestre del año (1-4) de date.,3,
+year_month,texto,"Año y mes combinados, formato AAAA-MM. Útil para series de tiempo mensuales.",2022-08,
+year_quarter,texto,"Año y trimestre combinados, formato AAAA-QN.",2022-Q3,
+month_period,categoría,"Parte del mes en que cae la fecha, según el día del mes.",Fin Mes,"Categorías: Inicio Mes (días 1-10), Medio Mes (11-20), Fin Mes (21-31)."
+year,entero,Año de la venta.,2022,
+region,texto,"Región de venta tal como llega de la fuente original, incluye tanto áreas como el consolidado nacional.",Total Autos Area 5,No usar directamente para sumas regionales (ver region_type).
+region_type,texto,Bandera creada en el ETL para distinguir área regional de consolidado nacional.,Área Regional,CRÍTICA: filtrar por 'Área Regional' al sumar/promediar por región para evitar doble conteo; usar 'Total Nacional' solo para la cifra país.
+region_clean,texto,"Versión legible de region, sin el prefijo 'Total Autos'.",Area 5,"Uso en reportes/visualizaciones, no reemplaza a region_type."
+region_short,texto,"Versión corta de region_clean, sin la palabra 'Scanning' en el caso del total nacional.",Mexico,Columna recomendada para graficar por región.
+total_unit_sales,decimal,Unidades vendidas en la semana para ese producto y región.,0.006,Valores fraccionarios son normales (representan promedios/proyecciones del dato de origen).
+total_value_sales,decimal,"Valor monetario de la venta en la semana, en pesos mexicanos ($).",0.139,Variable objetivo principal.
+total_unit_avg_weekly_sales,decimal,Promedio histórico de unidades vendidas por semana para ese producto (dato de origen).,1,Sirve de referencia para detectar semanas atípicas.
+avg_weekly_price,decimal,"Precio promedio de venta semanal (ASP, Average Selling Price), calculado como total_value_sales / total_unit_sales.",23.17,"No es un precio de lista fijo: ambos componentes ya son totales agregados de la semana, así que puede variar semana a semana por promociones o mezcla de canales. 0 cuando total_unit_sales es 0 (precio no calculable)."
+var_weekly_avg,decimal,Diferencia entre las unidades vendidas esa semana y el promedio histórico semanal del producto.,-0.99,Positivo = semana por encima de su promedio; negativo = por debajo.
+var_pct,decimal,Igual que var_weekly_avg pero expresado en porcentaje respecto al promedio histórico.,-99.4,En %.
+cat_sales,categoría,Categorización de total_value_sales en rangos (Muy Bajo a Muy Alto).,Muy Bajo,"Bins: 0-10, 10-50, 50-100, 100-500, 500+."
+cat_units,categoría,Categorización de total_unit_sales en rangos (Muy Bajo a Muy Alto).,Muy Bajo,"Bins: 0-0.5, 0.5-2, 2-5, 5-10, 10+."
+cat_avg_price,categoría,Categorización de avg_weekly_price en rangos (Económico a Premium).,Bajo,'Sin Especificar' cuando avg_weekly_price es 0.
+above_avg,binario (0/1),1 si la venta de la semana superó el promedio histórico semanal del producto (total_unit_avg_weekly_sales).,0,
+high_value,binario (0/1),1 si avg_weekly_price está por encima de la mediana de precio de todo el dataset.,0,"Umbral fijo, calculado una sola vez sobre el dataset completo."
+high_turnover,binario (0/1),1 si la rotación promedio del producto (total_unit_avg_weekly_sales) está por encima de la mediana de rotación entre productos.,0,"El umbral se calcula colapsando primero total_unit_avg_weekly_sales a un valor por producto (groupby item_code) antes de sacar la mediana, para que cada producto cuente una sola vez y no se le dé más peso a los que tienen más semanas/regiones registradas."
+vip_sale,binario (0/1),1 si total_value_sales está por encima de la mediana de valor de venta de todo el dataset.,0,"Umbral fijo, calculado una sola vez sobre el dataset completo."
+star_product,binario (0/1),1 si la venta cumple high_value=1 y high_turnover=1 simultáneamente (alto precio y alta rotación).,0,
+rank_product_value,entero (rank),Posición del producto (item_code) según su venta total acumulada en todo el periodo. 1 = producto más vendido.,209,Mismo valor para todas las filas del mismo item_code.
+percentile_region,entero (0-9),"Decil de total_value_sales de la fila dentro de su propia region (0=10% inferior, 9=10% superior).",0,"Calculado sobre region sin filtrar, refleja la posición relativa dentro de esa fila de región tal como viene en la fuente."
+rank_year_item,decimal (rank),"Posición de la venta dentro de su mismo producto (item_code) y año (year), ordenado por total_value_sales.",194,Permite identificar la mejor/peor semana de un producto dentro de cada año.
